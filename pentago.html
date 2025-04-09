@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Pentago Oyunu - 5 Taşla Kazanma</title>
+  <style>
+    /* Genel stil ayarları */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      font-family: sans-serif;
+      background-color: #f7f7f7;
+    }
+    
+    /* Üst başlık stili */
+    header {
+      background-color: #990000;
+      color: #fff;
+      padding: 10px;
+      text-align: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+      width: 100%;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 36px;
+      letter-spacing: 3px;
+    }
+    
+    /* Ana kapsayıcı: Esnek düzen ile üç bölüme ayrılmış */
+    .ana-kapsayici {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 30px;
+      padding: 20px;
+      flex-wrap: wrap;
+    }
+    
+    /* Sol taraftaki kurallar */
+    .kurallar-cercevesi {
+      background-color: #990000;
+      color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      width: 250px;
+      font-size: 16px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      margin-bottom: 20px;
+    }
+    .kurallar-cercevesi h2 {
+      margin-top: 0;
+      font-size: 24px;
+      text-align: center;
+    }
+    .kurallar-cercevesi ul {
+      padding-left: 20px;
+      list-style-type: disc;
+    }
+    .kurallar-cercevesi li {
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+    
+    /* Orta kısım: Oyun alanı */
+    .oyun-alani {
+      display: grid;
+      grid-template-columns: repeat(2, auto);
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+    
+    /* Döndürülebilir kareler: Her biri 3x3 hücre */
+    .donebilir-kare {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      background-color: #990000;
+      border-radius: 15px;
+      transition: transform 0.5s ease;
+      transform: rotate(0deg);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 10px;
+      padding: 10px;
+      box-sizing: border-box;
+      cursor: pointer;
+    }
+    /* Döndürme modundayken üstte bilgi */
+    .donebilir-kare.rotasyon-aktif::before {
+      content: "DÖNDÜR";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 30px;
+      background: rgba(0, 0, 0, 0.3);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      border-top-left-radius: 15px;
+      border-top-right-radius: 15px;
+      pointer-events: none;
+    }
+    
+    /* Hücre stili: Yuvarlak ve dimple efekti */
+    .hucre {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: radial-gradient(circle closest-side, #aa0000, #660000);
+      box-shadow: inset 0 4px 6px rgba(0, 0, 0, 0.6);
+      cursor: pointer;
+      position: relative;
+    }
+    
+    /* Taşların ortak stili */
+    .tas {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+    }
+    /* Siyah taş */
+    .tas-siyah {
+      background: radial-gradient(circle at 30% 30%, #000, #333);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.7);
+    }
+    /* Beyaz taş */
+    .tas-beyaz {
+      background: radial-gradient(circle at 30% 30%, #fff, #ccc);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Sağ kısım: Reset, tam ekran butonu ve kredi */
+    .sag-bilgi {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    #sifirla, #fullscreenBtn {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #990000;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    #sifirla:hover, #fullscreenBtn:hover {
+      background-color: #880000;
+    }
+    .kredi {
+      font-size: 14px;
+      color: #444;
+    }
+    .kredi a {
+      color: #444;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .kredi a:hover {
+      text-decoration: underline;
+    }
+    
+    /* Tam ekran modunda boyutları büyütmek için :fullscreen pseudo-sınıfı */
+    :fullscreen .donebilir-kare {
+      width: 330px;
+      height: 330px;
+    }
+    :fullscreen .oyun-alani {
+      gap: 20px;
+    }
+    
+    /* Custom alert (özel modal) stilleri */
+    .custom-alert {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .custom-alert-content {
+      background: #fff;
+      padding: 20px 30px;
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+    .custom-alert-content p {
+      margin: 0 0 15px;
+    }
+    .custom-alert-content button {
+      padding: 5px 15px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      background-color: #990000;
+      color: #fff;
+      cursor: pointer;
+    }
+    .custom-alert-content button:hover {
+      background-color: #880000;
+    }
+  </style>
+</head>
+<body>
+  <!-- Üst kısım: Sayfa Başlığı -->
+  <header>
+    <h1>PENTAGO OYUNU</h1>
+  </header>
+  
+  <!-- Ana kapsayıcı -->
+  <div class="ana-kapsayici">
+    <!-- Sol: Oyun Kuralları -->
+    <div class="kurallar-cercevesi">
+      <h2>Oyun Kuralları</h2>
+      <ul>
+        <li>Oyuna her zaman siyah oyuncu başlar.</li>
+        <li>Kendi taşınızı oyun alanında bir kareye koyduktan sonra, içerisinde taş bulunan bir kareyi saat yönünde 1 tur döndürmeniz gerekmektedir.</li>
+        <li>5 taşı yatay, dikey veya çapraz olarak yan yana getiren oyuncu oyunu kazanır.</li>
+        <li>Eğer aynı anda iki oyuncunun taşları da 5’e ulaşırsa, hamle yapan oyuncu kazanır.</li>
+      </ul>
+    </div>
+    
+    <!-- Orta: Oyun Alanı -->
+    <div class="oyun-alani">
+      <div class="donebilir-kare" id="kare1" data-rotation="0"></div>
+      <div class="donebilir-kare" id="kare2" data-rotation="0"></div>
+      <div class="donebilir-kare" id="kare3" data-rotation="0"></div>
+      <div class="donebilir-kare" id="kare4" data-rotation="0"></div>
+    </div>
+    
+    <!-- Sağ: Reset, Tam Ekran ve Kredi -->
+    <div class="sag-bilgi">
+      <button id="fullscreenBtn">Tam Ekran</button>
+      <button id="sifirla">Yeni Oyunu Başlat</button>
+      <div class="kredi">
+        Bu oyun <a href="https://instagram.com/ogretmencex" target="_blank">instagram.com/ogretmencex</a> hesabı tarafından geliştirildi.
+      </div>
+    </div>
+  </div>
+  
+  <!-- Custom Alert (Özel Modal) HTML -->
+  <div id="customAlert" class="custom-alert" style="display: none;">
+    <div class="custom-alert-content">
+      <p id="alertMessage"></p>
+      <button id="alertOk">Tamam</button>
+    </div>
+  </div>
+  
+  <!-- Oyun işleyişi: Pentago oyunu scriptleri -->
+  <script>
+    // Global değişkenler
+    let aktifOyuncu = 'siyah';
+    let hamleAsamasi = 'yerlestirme';
+    let oyunBitti = false;
+    let tahta = Array.from({ length: 6 }, () => Array(6).fill(null));
+
+    // Her kareye 9 adet hücre oluşturuluyor, global koordinatlar atanıyor
+    function kareleriBaslat() {
+      document.querySelectorAll('.donebilir-kare').forEach(kare => {
+        let kareAdi = kare.id;
+        let satirOfset = 0, sutunOfset = 0;
+        if (kareAdi === 'kare1') { satirOfset = 0; sutunOfset = 0; }
+        else if (kareAdi === 'kare2') { satirOfset = 0; sutunOfset = 3; }
+        else if (kareAdi === 'kare3') { satirOfset = 3; sutunOfset = 0; }
+        else if (kareAdi === 'kare4') { satirOfset = 3; sutunOfset = 3; }
+        
+        kare.innerHTML = "";
+        kare.setAttribute('data-rotation', '0');
+        kare.style.transform = 'rotate(0deg)';
+        
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+            let globalSatir = satirOfset + i;
+            let globalSutun = sutunOfset + j;
+            let hucre = document.createElement('div');
+            hucre.classList.add('hucre');
+            hucre.setAttribute('data-satir', globalSatir);
+            hucre.setAttribute('data-sutun', globalSutun);
+            if (tahta[globalSatir][globalSutun] !== null) {
+              hucre.dataset.dolu = "evet";
+              let tasElem = document.createElement('div');
+              tasElem.classList.add('tas');
+              tasElem.classList.add(tahta[globalSatir][globalSutun] === 'siyah' ? 'tas-siyah' : 'tas-beyaz');
+              hucre.appendChild(tasElem);
+            }
+            hucre.addEventListener('click', function(e) {
+              if (oyunBitti || hamleAsamasi !== 'yerlestirme') return;
+              if (this.dataset.dolu === "evet") return;
+              e.stopPropagation();
+              tasYerlestir(this);
+            });
+            kare.appendChild(hucre);
+          }
+        }
+      });
+    }
+    
+    // İlk başlatma
+    kareleriBaslat();
+    
+    // Döndürülebilir karelere tıklanınca (döndürme modunda) işlem yapma
+    document.querySelectorAll('.donebilir-kare').forEach(kare => {
+      kare.addEventListener('click', function(event) {
+        if (oyunBitti || hamleAsamasi !== 'dondurma') return;
+        kareyiDondur(this.id);
+        document.querySelectorAll('.donebilir-kare').forEach(k => {
+          k.classList.remove('rotasyon-aktif');
+        });
+      });
+    });
+    
+    // Taş yerleştirme işlemi
+    function tasYerlestir(hucre) {
+      let satir = parseInt(hucre.getAttribute('data-satir'));
+      let sutun = parseInt(hucre.getAttribute('data-sutun'));
+      tahta[satir][sutun] = aktifOyuncu;
+      hucre.dataset.dolu = "evet";
+      hucre.style.background = 'none';
+      let tasElem = document.createElement('div');
+      tasElem.classList.add('tas');
+      tasElem.classList.add(aktifOyuncu === 'siyah' ? 'tas-siyah' : 'tas-beyaz');
+      hucre.appendChild(tasElem);
+      hamleAsamasi = 'dondurma';
+      document.querySelectorAll('.donebilir-kare').forEach(kare => {
+        kare.classList.add('rotasyon-aktif');
+      });
+    }
+    
+    // Kare döndürme işlemi
+    function kareyiDondur(kareId) {
+      if (oyunBitti) return;
+      let satirOfset = 0, sutunOfset = 0;
+      if (kareId === 'kare1') { satirOfset = 0; sutunOfset = 0; }
+      else if (kareId === 'kare2') { satirOfset = 0; sutunOfset = 3; }
+      else if (kareId === 'kare3') { satirOfset = 3; sutunOfset = 0; }
+      else if (kareId === 'kare4') { satirOfset = 3; sutunOfset = 3; }
+      
+      let tasVar = false;
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          if (tahta[satirOfset + i][sutunOfset + j] !== null) {
+            tasVar = true;
+            break;
+          }
+        }
+        if (tasVar) break;
+      }
+      if (!tasVar) {
+        // alert yerine özel modal fonksiyonunu kullanıyoruz.
+        showCustomAlert("Bu kare boş, döndürülemez!");
+        return;
+      }
+      
+      let altMatris = [];
+      for (let i = 0; i < 3; i++) {
+        altMatris[i] = [];
+        for (let j = 0; j < 3; j++) {
+          altMatris[i][j] = tahta[satirOfset + i][sutunOfset + j];
+        }
+      }
+      let donmusMatris = [];
+      for (let i = 0; i < 3; i++) {
+        donmusMatris[i] = [];
+        for (let j = 0; j < 3; j++) {
+          donmusMatris[i][j] = altMatris[2 - j][i];
+        }
+      }
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          tahta[satirOfset + i][sutunOfset + j] = donmusMatris[i][j];
+        }
+      }
+      
+      let kare = document.getElementById(kareId);
+      kareyiRenderle(kare, satirOfset, sutunOfset);
+      document.querySelectorAll('.donebilir-kare').forEach(kare => {
+        kare.classList.remove('rotasyon-aktif');
+      });
+      
+      if (kazanmaKontrolu()) {
+  oyunBitti = true;
+  showCustomAlert(aktifOyuncu + " KAZANDI! 👑");
+  return;
+}
+aktifOyuncu = (aktifOyuncu === 'siyah') ? 'beyaz' : 'siyah';
+hamleAsamasi = 'yerlestirme';
+    }
+    
+    function kareyiRenderle(kare, satirOfset, sutunOfset) {
+      kare.innerHTML = "";
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          let globalSatir = satirOfset + i;
+          let globalSutun = sutunOfset + j;
+          let hucre = document.createElement('div');
+          hucre.classList.add('hucre');
+          hucre.setAttribute('data-satir', globalSatir);
+          hucre.setAttribute('data-sutun', globalSutun);
+          if (tahta[globalSatir][globalSutun] !== null) {
+            hucre.dataset.dolu = "evet";
+            let tasElem = document.createElement('div');
+            tasElem.classList.add('tas');
+            tasElem.classList.add(tahta[globalSatir][globalSutun] === 'siyah' ? 'tas-siyah' : 'tas-beyaz');
+            hucre.appendChild(tasElem);
+          }
+          hucre.addEventListener('click', function(e) {
+            if (oyunBitti || hamleAsamasi !== 'yerlestirme') return;
+            if (this.dataset.dolu === "evet") return;
+            e.stopPropagation();
+            tasYerlestir(this);
+          });
+          kare.appendChild(hucre);
+        }
+      }
+    }
+    
+    function kazanmaKontrolu() {
+      const yonler = [
+        [0, 1],
+        [1, 0],
+        [1, 1],
+        [1, -1]
+      ];
+      for (let r = 0; r < 6; r++) {
+        for (let c = 0; c < 6; c++) {
+          if (tahta[r][c] !== null) {
+            let oyuncu = tahta[r][c];
+            for (let d = 0; d < yonler.length; d++) {
+              let adet = 1;
+              let dr = yonler[d][0], dc = yonler[d][1];
+              let nr = r + dr, nc = c + dc;
+              while (nr >= 0 && nr < 6 && nc >= 0 && nc < 6 && tahta[nr][nc] === oyuncu) {
+                adet++;
+                nr += dr;
+                nc += dc;
+              }
+              if (adet >= 5) return true;
+            }
+          }
+        }
+      }
+      return false;
+    }
+    
+    function oyunuSifirla() {
+      aktifOyuncu = 'siyah';
+      hamleAsamasi = 'yerlestirme';
+      oyunBitti = false;
+      tahta = Array.from({ length: 6 }, () => Array(6).fill(null));
+      document.querySelectorAll('.donebilir-kare').forEach(kare => {
+        kare.setAttribute('data-rotation', '0');
+        kare.style.transform = 'rotate(0deg)';
+      });
+      kareleriBaslat();
+    }
+    
+    document.getElementById('sifirla').addEventListener('click', oyunuSifirla);
+  </script>
+  
+  <!-- Tam ekran modunu yönetmek için script -->
+  <script>
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+          showCustomAlert(`Tam ekran moduna geçilemedi: ${err.message}`);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    }
+    document.getElementById('fullscreenBtn').addEventListener('click', toggleFullScreen);
+  </script>
+  
+  <!-- Custom Alert (Özel Modal) Scriptleri -->
+  <script>
+    // Özel uyarı mesajını gösteren fonksiyon
+    function showCustomAlert(message) {
+      document.getElementById('alertMessage').innerText = message;
+      document.getElementById('customAlert').style.display = 'flex';
+    }
+    
+    // Modal penceresini kapatmak için
+    document.getElementById('alertOk').addEventListener('click', function() {
+      document.getElementById('customAlert').style.display = 'none';
+    });
+  </script>
+</body>
+</html>
